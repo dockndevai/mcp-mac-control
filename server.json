@@ -1,0 +1,53 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.dockndevai/mcp-mac-control",
+  "description": "Full macOS control — drive a Mac like a human: shell, AppleScript, files, processes, and human-like GUI (click, drag, scroll, type). Full control by default; opt-in safe mode.",
+  "repository": {
+    "url": "https://github.com/dockndevai/mcp-mac-control",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@dockndevai/mcp-mac-control",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "MACCTL_SAFE_MODE",
+          "description": "Set true to invert to safe-by-default: read-only, all powers gated, confirmations on. Default false (full control).",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "MACCTL_MODE",
+          "description": "Access mode: read-only | read-write | admin. Defaults to admin (or read-only in safe mode).",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "MACCTL_CONFIRM",
+          "description": "Set true to require human approval (via MCP elicitation) on destructive ops. Default off in full control.",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "MACCTL_PATH_ALLOWLIST",
+          "description": "Comma-separated path roots the agent may touch (empty = anywhere).",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "MACCTL_PROTECTED_PATHS",
+          "description": "Comma-separated path roots that may be read but never modified/deleted (empty by default in full control).",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

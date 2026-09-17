@@ -1,4 +1,4 @@
-# Publishing `mcp-debezium`
+# Publishing `mcp-mac-control`
 
 This server is a standard **stdio** MCP server distributed as an npm package. Below is how to publish it and list it in the MCP marketplaces/registries. Run these from your own accounts — they require credentials this repo does not contain.
 
@@ -16,7 +16,7 @@ npm login
 npm publish --access public   # prepublishOnly runs the build first
 ```
 
-`package.json` already declares `"mcpName": "io.github.dockndevai/mcp-debezium"`, which the official registry uses to verify npm ownership. After this, clients can run the server with `npx -y @dockndevai/mcp-debezium` (no local clone needed).
+`package.json` already declares `"mcpName": "io.github.dockndevai/mcp-mac-control"`, which the official registry uses to verify npm ownership. After this, clients can run the server with `npx -y @dockndevai/mcp-mac-control` (no local clone needed).
 
 ## 2. Official MCP Registry (registry.modelcontextprotocol.io)
 
@@ -30,7 +30,7 @@ mcp-publisher publish             # reads ./server.json
 
 ## 3. Smithery (smithery.ai)
 
-Smithery indexes GitHub MCP servers and can host/run them. Connect the GitHub repo at smithery.ai, or add a `smithery.yaml` describing the stdio command. Because this is an npm stdio server, the runtime command is `npx -y @dockndevai/mcp-debezium`.
+Smithery indexes GitHub MCP servers and can host/run them. Connect the GitHub repo at smithery.ai, or add a `smithery.yaml` describing the stdio command. Because this is an npm stdio server, the runtime command is `npx -y @dockndevai/mcp-mac-control`.
 
 ## 4. Glama (glama.ai/mcp/servers)
 
@@ -53,12 +53,12 @@ A GitHub Actions workflow ([`.github/workflows/release.yml`](.github/workflows/r
 1. Create an npm **automation** access token (npmjs.com → Access Tokens → Granular/Automation).
 2. Add it as a repo secret:
    ```bash
-   gh secret set NPM_TOKEN --repo dockndevai/mcp-debezium
+   gh secret set NPM_TOKEN --repo dockndevai/mcp-mac-control
    ```
    (Or set it once as an organization secret shared across all the servers.)
 3. *(Optional)* to also publish to the official MCP Registry on each release, set a repo variable:
    ```bash
-   gh variable set PUBLISH_TO_MCP_REGISTRY --repo dockndevai/mcp-debezium --body true
+   gh variable set PUBLISH_TO_MCP_REGISTRY --repo dockndevai/mcp-mac-control --body true
    ```
    This uses passwordless GitHub OIDC for the `io.github.dockndevai` namespace — no extra secret.
 

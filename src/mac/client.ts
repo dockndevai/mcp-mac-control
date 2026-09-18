@@ -18,6 +18,17 @@ export interface ExecResult {
   timedOut: boolean;
 }
 
+/** A display in the GLOBAL top-left point coordinate space (what cliclick clicks in). */
+export interface Display {
+  index: number; // 0 = main; maps to `screencapture -D index+1`
+  x: number; // global top-left, points
+  y: number;
+  w: number; // points
+  h: number;
+  scale: number; // backing scale (2 = Retina)
+  main: boolean;
+}
+
 /** Thin wrapper over the local macOS system. Every method is a single, well-scoped capability. */
 export class MacClient {
   constructor(private readonly limits: RuntimeLimits) {}
@@ -253,17 +264,64 @@ export class MacClient {
     if (r.code !== 0) throw new MacError(`open failed: ${r.stderr.trim() || `exit ${r.code}`}`);
   }
 
-  async screenshot(): Promise<string> {
+  /** All displays with their GLOBAL top-left point bounds (the coordinate space cliclick uses),
+   *  scale factor, and main flag. Enumerated via NSScreen (Cocoa origin is bottom-left, so y is
+   *  flipped to top-left against the main screen's height). Index i maps to `screencapture -D i+1`. */
+  async displays(): Promise<Display[]> {
+    const script =
+      'ObjC.import("AppKit");' +
+      "var s=$.NSScreen.screens,mh=s.objectAtIndex(0).frame.size.height,o=[];" +
+      "for(var i=0;i<s.count;i++){var d=s.objectAtIndex(i),f=d.frame;" +
+      "o.push({index:i,x:Math.round(f.origin.x),y:Math.round(mh-(f.origin.y+f.size.height))," +
+      "w:Math.round(f.size.width),h:Math.round(f.size.height),scale:d.backingScaleFactor,main:i==0});}" +
+      "JSON.stringify(o);";
+    try {
+      return JSON.parse(await this.osa(script, "JavaScript", 8_000)) as Display[];
+    } catch {
+      // Fallback: single main display from the desktop bounds (points).
+      const { width, height } = await this.screenSize();
+      return [{ index: 0, x: 0, y: 0, w: width, h: height, scale: 1, main: true }];
+    }
+  }
+
+  /** The display whose bounds contain the frontmost window's top-left (so a bare `screenshot`
+   *  shows what the user is actually looking at, even on a second monitor). */
+  private async frontmostDisplay(disps: Display[]): Promise<Display | undefined> {
+    try {
+      const ws = await this.listWindows();
+      const pos = ws[0]?.position;
+      if (!pos) return undefined;
+      const [px, py] = pos.split(",").map((s) => parseInt(s.trim(), 10));
+      if (Number.isNaN(px) || Number.isNaN(py)) return undefined;
+      return disps.find((d) => px >= d.x && px < d.x + d.w && py >= d.y && py < d.y + d.h);
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** Capture one display and return it downscaled to POINTS, so the image is 1:1 with click
+   *  coordinates. `displayIndex` picks a display (0=main); omitted → the frontmost window's
+   *  display, else main. Returns the chosen display's global bounds so callers can offset clicks. */
+  async screenshot(displayIndex?: number): Promise<{ base64: string; display: Display }> {
+    const disps = await this.displays();
+    let disp: Display | undefined;
+    if (displayIndex !== undefined) disp = disps.find((d) => d.index === displayIndex);
+    if (!disp) disp = (await this.frontmostDisplay(disps)) ?? disps.find((d) => d.main) ?? disps[0];
     const tmp = path.join(os.tmpdir(), `mac-control-${Date.now()}.png`);
-    const r = await this.run("screencapture", ["-x", "-t", "png", tmp]);
+    const r = await this.run("screencapture", ["-x", "-t", "png", "-D", String(disp.index + 1), tmp]);
     if (r.code !== 0) {
       throw new MacError(
         `screencapture failed (${r.stderr.trim() || `exit ${r.code}`}). The host process likely needs Screen Recording permission (System Settings → Privacy & Security → Screen Recording).`,
       );
     }
+    // Retina displays capture at 2x pixels; resize down to point dimensions so a pixel in the
+    // returned image equals one click point (no scale math for the caller).
+    if (disp.scale && disp.scale !== 1) {
+      await this.run("sips", ["-z", String(disp.h), String(disp.w), tmp]).catch(() => null);
+    }
     const data = await fs.readFile(tmp);
     await fs.rm(tmp, { force: true });
-    return data.toString("base64");
+    return { base64: data.toString("base64"), display: disp };
   }
 
   // ---- GUI input ----

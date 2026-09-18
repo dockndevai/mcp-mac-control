@@ -111,12 +111,28 @@ export const readTools: ToolDef[] = [
     config: {
       title: "Screenshot",
       description:
-        "Capture the screen and return it as a PNG image. Needs Screen Recording permission for the host process.",
-      inputSchema: {},
+        "Capture a display as a PNG and return it. The image is downscaled to POINTS, so it is 1:1 " +
+        "with click coordinates. Omit `display` to capture the display holding the frontmost window " +
+        "(handy with a second monitor); pass 0 for the main display. Needs Screen Recording permission.",
+      inputSchema: {
+        display: z
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe("Which display to capture (0 = main). Omit for the frontmost window's display."),
+      },
     },
-    handler: async (_args, { client, policy }) => {
+    handler: async (args, { client, policy }) => {
       policy.guard({ tool: "screenshot", capability: "read" });
-      return imageResult(await client.screenshot(), "image/png", "Screen capture:");
+      const { base64, display } = await client.screenshot(args.display as number | undefined);
+      const cap =
+        `Screen capture — display ${display.index}${display.main ? " (main)" : ""}, ` +
+        `${display.w}×${display.h} points, global top-left (${display.x}, ${display.y}). ` +
+        `This image is 1:1 with click POINTS: to click something at pixel (px, py) in THIS image, ` +
+        `click at (${display.x} + px, ${display.y} + py) — add the display's origin. ` +
+        `Use get_screen_size for the full display layout.`;
+      return imageResult(base64, "image/png", cap);
     },
   },
   {
@@ -124,12 +140,15 @@ export const readTools: ToolDef[] = [
     capability: "read",
     config: {
       title: "Screen size",
-      description: "Return the main screen size in points (width, height) — use it to reason about click coordinates.",
+      description:
+        "Return the overall desktop size AND every display's global point bounds (origin x/y, " +
+        "width, height, scale, main) — use it to reason about click coordinates across monitors.",
       inputSchema: {},
     },
     handler: async (_args, { client, policy }) => {
       policy.guard({ tool: "get_screen_size", capability: "read" });
-      return jsonResult(await client.screenSize());
+      const [size, displays] = await Promise.all([client.screenSize(), client.displays()]);
+      return jsonResult({ ...size, displays });
     },
   },
   {

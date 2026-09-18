@@ -4,7 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2026-09-16
+## [0.2.0] - 2026-09-19
+
+### Added
+- **Multi-monitor screenshots with point-accurate coordinates.** `screenshot` now takes an optional
+  `display` argument (omit to capture the display holding the frontmost window; `0` for the main
+  display), and the returned image is downscaled to **points**, so it maps 1:1 to click coordinates.
+  The caption explains how to convert an in-image pixel to a global click point by adding the
+  display's origin.
+- `get_screen_size` now returns every display's global point bounds (origin x/y, width, height,
+  backing scale, and which is main), so an agent can reason about clicks across multiple monitors.
+
+### Changed
+- Bump `zod` to ^4.6.5.
 
 ### Added
 - Initial release: an MCP server that gives an agent **full control of a Mac by default** —

@@ -1,7 +1,7 @@
 {
   "name": "@dockndevai/mcp-mac-control",
   "mcpName": "io.github.dockndevai/mcp-mac-control",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Model Context Protocol server for FULL macOS control — drive a Mac like a human: shell, AppleScript, files, processes, and human-like GUI (move, click, double/right-click, drag, scroll, type, keys). Full control by default, with an opt-in safe mode.",
   "type": "module",
   "license": "MIT",

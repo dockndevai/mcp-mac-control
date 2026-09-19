@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-09-19
+
+### Fixed
+- Republish of 0.2.0. The 0.2.0 npm publish was accepted but left in npm's "staged" state and never
+  committed to the registry (the version 404'd and could not be re-published). No code changes from
+  0.2.0; this release makes the 0.2.0 contents actually installable.
+
 ## [0.2.0] - 2026-09-19
 
 ### Added

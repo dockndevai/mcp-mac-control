@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { resolvePath } from "../config.js";
+import { resolvePath, resolveRealPath } from "../config.js";
 import type { ToolDef } from "./types.js";
 import { jsonResult, textResult } from "./types.js";
 
@@ -28,7 +28,7 @@ export const adminTools: ToolDef[] = [
         cwd: z.string().optional().describe("Working directory (supports ~)."),
       },
     },
-    handler: async (args, { client, policy, confirm }) => {
+    handler: async (args, { client, policy, confirm, guard }) => {
       const command = args.command as string;
       const argv = (args.args as string[] | undefined) ?? [];
       const cwd = args.cwd ? resolvePath(args.cwd as string) : undefined;
@@ -41,6 +41,7 @@ export const adminTools: ToolDef[] = [
       });
       const shown = `${command} ${argv.join(" ")}`.trim();
       if (dryRun) return textResult(`[dry-run] Would run: ${shown}`);
+      await guard.enforce({ tool: "run_command", command: shown, context: cwd ? `cwd: ${cwd}` : undefined }, confirm);
       if (policy.confirmDestructive) {
         const ok = await confirm.confirm({ action: "run command", target: shown, details: { cwd } });
         if (!ok.approved) return textResult(`Command cancelled — ${ok.reason}.`);
@@ -63,7 +64,7 @@ export const adminTools: ToolDef[] = [
         language: z.enum(["AppleScript", "JavaScript"]).default("AppleScript").describe("Script language."),
       },
     },
-    handler: async (args, { client, policy, confirm }) => {
+    handler: async (args, { client, policy, confirm, guard }) => {
       const script = args.script as string;
       const language = (args.language as "AppleScript" | "JavaScript" | undefined) ?? "AppleScript";
       const { dryRun } = policy.guard({
@@ -74,6 +75,7 @@ export const adminTools: ToolDef[] = [
       });
       const preview = script.length > 120 ? `${script.slice(0, 117)}…` : script;
       if (dryRun) return textResult(`[dry-run] Would run ${language}: ${preview}`);
+      await guard.enforce({ tool: "run_applescript", command: script, context: language }, confirm);
       if (policy.confirmDestructive) {
         const ok = await confirm.confirm({ action: `run ${language}`, target: preview });
         if (!ok.approved) return textResult(`Script cancelled — ${ok.reason}.`);
@@ -92,8 +94,8 @@ export const adminTools: ToolDef[] = [
         "Honours the path allowlist and refuses protected paths.",
       inputSchema: { path: z.string().min(1).describe("Path to trash (supports ~).") },
     },
-    handler: async (args, { client, policy, confirm }) => {
-      const abs = resolvePath(args.path as string);
+    handler: async (args, { client, policy, confirm, guard }) => {
+      const abs = resolveRealPath(args.path as string);
       const { dryRun } = policy.guard({
         tool: "delete_path",
         capability: "admin",
@@ -103,6 +105,7 @@ export const adminTools: ToolDef[] = [
         destructive: true,
       });
       if (dryRun) return textResult(`[dry-run] Would move ${abs} to the Trash.`);
+      await guard.enforce({ tool: "delete_path", command: `delete (move to Trash): ${abs}`, context: abs }, confirm);
       if (policy.confirmDestructive) {
         const ok = await confirm.confirm({ action: "move to Trash", target: abs });
         if (!ok.approved) return textResult(`Deletion cancelled — ${ok.reason}.`);

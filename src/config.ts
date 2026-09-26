@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import type { AccessMode, SecurityConfig } from "./security.js";
@@ -24,6 +25,32 @@ export function resolvePath(p: string): string {
   if (s === "~") s = HOME;
   else if (s.startsWith("~/")) s = path.join(HOME, s.slice(2));
   return path.resolve(s);
+}
+
+/**
+ * Expand `~`, resolve to absolute, and follow symlinks to their real target — so a symlink
+ * planted inside an allowlisted directory (or pointing at a protected one) can't be used to
+ * smuggle a filesystem op past `isPathAllowed`/`isPathProtected`, which only ever see the
+ * post-resolution path. `fs.writeFile`/`readFile` follow symlinks; the policy check must see
+ * the same real path they will.
+ *
+ * The target itself may not exist yet (e.g. `write_file` creating a new file) — in that case
+ * fall back to resolving its parent directory, since that's the boundary that actually matters
+ * for a not-yet-existing path. If even the parent doesn't exist, fall back to the plain
+ * resolved path rather than throwing; `guard()` will still confine it correctly once it does.
+ */
+export function resolveRealPath(p: string): string {
+  const abs = resolvePath(p);
+  try {
+    return fs.realpathSync(abs);
+  } catch {
+    try {
+      const realDir = fs.realpathSync(path.dirname(abs));
+      return path.join(realDir, path.basename(abs));
+    } catch {
+      return abs;
+    }
+  }
 }
 
 function csv(name: string): string[] {
@@ -75,9 +102,11 @@ export function loadConfig(): AppConfig {
   const protectedRaw = csv("MACCTL_PROTECTED_PATHS");
   const security: SecurityConfig = {
     mode: parseMode(safeMode),
-    pathAllowlist: csv("MACCTL_PATH_ALLOWLIST").map(resolvePath),
+    // Canonicalized (symlinks followed) so a symlinked root can't create a mismatch against the
+    // equally-canonicalized target path checked in guard().
+    pathAllowlist: csv("MACCTL_PATH_ALLOWLIST").map(resolveRealPath),
     // Full control = nothing protected unless the operator opts in; safe mode protects system+secrets.
-    protectedPaths: (protectedRaw.length ? protectedRaw : safeMode ? SAFE_PROTECTED : []).map(resolvePath),
+    protectedPaths: (protectedRaw.length ? protectedRaw : safeMode ? SAFE_PROTECTED : []).map(resolveRealPath),
     allowExec: bool("MACCTL_ALLOW_EXEC", !safeMode),
     commandAllowlist: csv("MACCTL_COMMAND_ALLOWLIST"),
     allowDelete: bool("MACCTL_ALLOW_DELETE", !safeMode),

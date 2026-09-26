@@ -4,6 +4,28 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-09-26
+
+### Added
+- **Optional AI risk guard (laya-guard).** In a permissive mode, high-risk tools (`run_command`,
+  `run_applescript`, `delete_path`) can consult a local [laya-guard](https://github.com/dockndevai/laya-guard)
+  daemon before executing — deterministic rules plus the Laya decision model classify the command as
+  allow / confirm / block. It runs **after** the deterministic `SecurityPolicy` and can only *tighten*
+  (add a confirm/block), never grant. Off by default; `MACCTL_GUARD_MODE=monitor|enforce`,
+  `MACCTL_GUARD_URL`, `MACCTL_GUARD_TIMEOUT_MS`, `MACCTL_GUARD_FAIL_CLOSED`. Fails closed when the
+  daemon is unreachable in enforce mode.
+
+### Security
+- **Symlink path-escape fix.** `resolvePath()` only normalized a path (`path.resolve`); it never
+  followed symlinks, so a symlink planted inside an allowlisted directory — or one that happened to
+  point at a protected root — could silently escape both `MACCTL_PATH_ALLOWLIST` and
+  `MACCTL_PROTECTED_PATHS`, since `fs.readFile`/`writeFile` follow symlinks but the policy check
+  never saw where they actually pointed. Added `resolveRealPath()`, which resolves symlinks
+  (`fs.realpathSync`) before the `guard()` allowlist/protected-path checks in `list_directory`,
+  `read_file`, `write_file`, and `delete_path`, falling back to resolving the parent directory for a
+  write target that doesn't exist yet. The configured allowlist/protected roots are now canonicalized
+  the same way at load time, so both sides of the comparison agree.
+
 ## [0.2.1] - 2026-09-19
 
 ### Fixed

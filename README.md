@@ -61,6 +61,24 @@ Full control needs no configuration. Everything below is about **restricting** i
 
 The policy engine ([`src/security.ts`](src/security.ts)) is the same graduated model as the rest of the suite — this server just ships it wide open by default. See [SECURITY.md](SECURITY.md).
 
+## AI risk guard (optional)
+
+For an extra layer on top of the static rules, this server can consult a local
+[**laya-guard**](https://github.com/dockndevai/laya-guard) daemon before running a high-risk tool
+(`run_command`, `run_applescript`, `delete_path`). The guard classifies the actual command —
+deterministic patterns plus a local decision model — as **allow / confirm / block**. It runs *after*
+the deterministic policy and can only **tighten** (add a confirm or block), never grant.
+
+| Variable | Default | Effect |
+|---|---|---|
+| `MACCTL_GUARD_MODE` | `off` | `monitor` (log what it would do) / `enforce` (block or require confirm) |
+| `MACCTL_GUARD_URL` | `http://127.0.0.1:8799` | the local laya-guard daemon |
+| `MACCTL_GUARD_TIMEOUT_MS` | `2000` | per-check timeout |
+| `MACCTL_GUARD_FAIL_CLOSED` | `confirm` | when the daemon is unreachable in enforce mode: `confirm` or `allow` |
+
+Run the daemon with `pipx install laya-guard && laya-guard`. Start in `monitor` to see what it catches,
+then switch to `enforce`.
+
 ## Developing
 
 ```bash

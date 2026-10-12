@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-10-12
+
+### Security
+- Bumped `@modelcontextprotocol/sdk` to 1.32.1 (patch range), resolving a high-severity advisory
+  where the OAuth client could send credentials to an authorization server chosen by the MCP server
+  (GHSA-6qxp-vccf-f47h).
+- Updated transitive dependencies (`proxy-addr`, `ip-address`, `fast-uri`, `source-map-js`) to clear
+  one critical, two high, and two moderate advisories flagged by `npm audit`. `npm audit` now reports
+  0 vulnerabilities.
+
+### Changed
+- Routine patch/minor bumps: `@types/node`, `tsx`, `vitest`, `zod` (all in-range, no behavior change).
+
 ## [0.3.1] - 2026-09-26
 
 ### Fixed

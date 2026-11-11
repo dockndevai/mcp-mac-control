@@ -34,7 +34,7 @@ async function main(): Promise<void> {
   process.stderr.write(
     `[mac-control] Starting in '${s.mode}' mode` +
       `${s.dryRun ? " (DRY RUN)" : ""}` +
-      ` [powers=${powers}, confirm=${s.confirmDestructive}]. ` +
+      ` [powers=${powers}, confirm=${s.confirmDestructive || s.requireHumanApproval}, requireHuman=${s.requireHumanApproval}]. ` +
       `${enabled.length} tools enabled: ${enabled.join(", ")}\n`,
   );
 

@@ -34,6 +34,11 @@ export interface SecurityConfig {
   /** Validate + log mutating operations without executing them. */
   dryRun: boolean;
   auditLog: boolean;
+  /**
+   * Refuse destructive ops that no human can approve (the client lacks elicitation, or the prompt fails)
+   * instead of trusting the flags alone. Implies `confirmDestructive`: it forces the prompt on.
+   */
+  requireHumanApproval: boolean;
 }
 
 export class PolicyError extends Error {
@@ -84,8 +89,9 @@ export class SecurityPolicy {
   get inputEnabled(): boolean {
     return this.config.allowInput;
   }
+  /** Destructive ops prompt the human: explicitly (MACCTL_CONFIRM / safe mode) or because a human is required. */
   get confirmDestructive(): boolean {
-    return this.config.confirmDestructive;
+    return this.config.confirmDestructive || this.config.requireHumanApproval;
   }
 
   isPathAllowed(path: string): boolean {

@@ -21,6 +21,18 @@ to, not just what the server allows.
   - `MACCTL_SAFE_MODE=true` — read-only, every power gated, confirmations on. The safest baseline.
   - `MACCTL_CONFIRM=true` — keep full power but make destructive ops (run/delete/kill) pause for a
     human to approve via MCP elicitation. A model can't approve its own action.
+  - `MACCTL_REQUIRE_HUMAN_APPROVAL=true` — like `MACCTL_CONFIRM`, but with no fallback: `run_command`,
+    `run_applescript`, `delete_path`, `kill_process` and file overwrites are **refused** when the client
+    cannot show an approval prompt. Each approval is bound to the exact tool and arguments (a fingerprint,
+    so the command text or script you were shown is what runs) and, where there is a target, to its
+    version: for `delete_path` and file overwrites the canonical (symlink-resolved) path plus inode, mtime
+    and size (a folder: entry count instead of size); for `kill_process` the pid plus process start time and
+    command line. If the target changed while the human was deciding, the action is refused. Trashing a
+    folder also asks the human to type its path. Approval receipts are written to the audit log
+    (`"audit":"approval"`, with `approvedBy` = `human` or `flag-only`). Limits: a folder's token covers only
+    its immediate entries, the prompt shows the first 1500 characters of the arguments (the fingerprint
+    covers all of them), and with neither `MACCTL_CONFIRM` nor this flag set (the full-control default)
+    there is no prompt at all.
   - `MACCTL_MODE=read-write` (or `read-only`) — never even register the admin tools.
   - `MACCTL_ALLOW_EXEC` / `_DELETE` / `_INPUT=false` — drop individual powers.
   - `MACCTL_PATH_ALLOWLIST` / `MACCTL_PROTECTED_PATHS` — confine file operations; keep system roots

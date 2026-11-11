@@ -115,6 +115,7 @@ export function loadConfig(): AppConfig {
     confirmDestructive: bool("MACCTL_CONFIRM", safeMode),
     dryRun: bool("MACCTL_DRY_RUN", false),
     auditLog: bool("MACCTL_AUDIT_LOG", true),
+    requireHumanApproval: bool("MACCTL_REQUIRE_HUMAN_APPROVAL", false),
   };
   const limits: RuntimeLimits = {
     maxFileBytes: num("MACCTL_MAX_FILE_BYTES", 1_000_000),

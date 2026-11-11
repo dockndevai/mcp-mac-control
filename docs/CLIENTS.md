@@ -38,7 +38,8 @@ Edit `claude_desktop_config.json` (macOS: `~/Library/Application Support/Claude/
 ```
 
 Add flags under `env` to restrict, e.g. `{ "MACCTL_CONFIRM": "true" }` to require approval on
-destructive ops, or `{ "MACCTL_SAFE_MODE": "true" }` for read-only.
+destructive ops (or `{ "MACCTL_REQUIRE_HUMAN_APPROVAL": "true" }` to also refuse them when the client
+cannot ask), or `{ "MACCTL_SAFE_MODE": "true" }` for read-only.
 
 ## Cursor
 

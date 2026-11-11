@@ -52,7 +52,8 @@ Full control needs no configuration. Everything below is about **restricting** i
 | `MACCTL_ALLOW_EXEC` | `true` | shell / AppleScript / kill |
 | `MACCTL_ALLOW_DELETE` | `true` | delete to Trash |
 | `MACCTL_ALLOW_INPUT` | `true` | GUI input (mouse/keyboard) |
-| `MACCTL_CONFIRM` | `false` | `true` → destructive ops pause for human approval via MCP elicitation |
+| `MACCTL_CONFIRM` | `false` | `true` → `run_command`, `run_applescript`, `delete_path`, `kill_process` pause for human approval via MCP elicitation. The prompt shows the tool, the exact arguments (command text, script, path) and a fingerprint; for `delete_path`, `kill_process` and file overwrites the target's version is pinned across the prompt and the action is refused if it changed; a prompt nobody answers is a refusal; trashing a folder also needs its path typed |
+| `MACCTL_REQUIRE_HUMAN_APPROVAL` | `false` | `true` → implies `MACCTL_CONFIRM`, and those actions are **refused** if the client cannot elicit (instead of running on the `MACCTL_ALLOW_*` flags alone) |
 | `MACCTL_PATH_ALLOWLIST` | (empty = anywhere) | confine file ops to these roots |
 | `MACCTL_PROTECTED_PATHS` | (empty) | roots readable but never modified/deleted |
 | `MACCTL_COMMAND_ALLOWLIST` | (empty = any) | restrict `run_command` to these programs |

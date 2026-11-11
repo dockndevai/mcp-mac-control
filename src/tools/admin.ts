@@ -107,7 +107,15 @@ export const adminTools: ToolDef[] = [
       if (dryRun) return textResult(`[dry-run] Would move ${abs} to the Trash.`);
       await guard.enforce({ tool: "delete_path", command: `delete (move to Trash): ${abs}`, context: abs }, confirm);
       if (policy.confirmDestructive) {
-        const ok = await confirm.confirm({ action: "move to Trash", target: abs });
+        // A folder is trashed with everything in it, so that is the recursive case: make the human type the path.
+        const isDir = await client.isDirectory(abs);
+        const ok = await confirm.confirm({
+          action: isDir ? "move folder and its contents to Trash" : "move to Trash",
+          target: abs,
+          typed: isDir,
+          // Canonical path + inode + mtime + size (directory: entry count); see MacClient.pathVersion.
+          probe: () => client.pathVersion(abs),
+        });
         if (!ok.approved) return textResult(`Deletion cancelled — ${ok.reason}.`);
       }
       await client.trashPath(abs);
@@ -138,7 +146,14 @@ export const adminTools: ToolDef[] = [
       });
       if (dryRun) return textResult(`[dry-run] Would send SIG${signal} to pid ${pid}.`);
       if (policy.confirmDestructive) {
-        const ok = await confirm.confirm({ action: `send SIG${signal}`, target: `pid ${pid}` });
+        const identity = await client.processIdentity(pid);
+        const ok = await confirm.confirm({
+          action: `send SIG${signal}`,
+          target: `pid ${pid}`,
+          details: { process: identity?.command.slice(0, 200), started: identity?.started },
+          // pid + start time + command line, so a recycled pid is not killed by an approval meant for another process.
+          probe: () => client.processVersion(pid),
+        });
         if (!ok.approved) return textResult(`Kill cancelled — ${ok.reason}.`);
       }
       client.killProcess(pid, `SIG${signal}` as NodeJS.Signals);

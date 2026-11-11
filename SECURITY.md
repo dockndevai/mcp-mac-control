@@ -33,6 +33,12 @@ to, not just what the server allows.
     its immediate entries, the prompt shows the first 1500 characters of the arguments (the fingerprint
     covers all of them), and with neither `MACCTL_CONFIRM` nor this flag set (the full-control default)
     there is no prompt at all.
+    `write_file` creates a path that did not exist with exclusive-create (`O_EXCL`) and never follows a symlink at
+    the final path component (`O_NOFOLLOW`, also on overwrites): a file or link that appears at the target between
+    the existence check and the write is re-resolved, re-checked against the allowlist and treated as an overwrite
+    (prompted where prompts are on, refused in strict mode), never silently overwritten; a dangling symlink at the
+    target is refused. Limit: only the last path component is protected — a parent directory swapped for a symlink
+    in the same instant is not detected.
   - `MACCTL_MODE=read-write` (or `read-only`) — never even register the admin tools.
   - `MACCTL_ALLOW_EXEC` / `_DELETE` / `_INPUT=false` — drop individual powers.
   - `MACCTL_PATH_ALLOWLIST` / `MACCTL_PROTECTED_PATHS` — confine file operations; keep system roots
